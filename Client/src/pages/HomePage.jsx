@@ -1,126 +1,97 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Product from "../components/product";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
-    const [products, setProducts] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    
-    // States for creating a product
-    const [newProductName, setNewProductName] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [totalValue, setTotalValue] = useState(0);
+    const [totalStock, setTotalStock] = useState(0);
+    const navigate = useNavigate();
 
-    const getProducts = async () => {
+    const API_URL = "http://localhost:3000/api/products";
+
+    const updateHomeStats = async () => {
         try {
-            setIsLoading(true);
-            const response = await axios.get("http://localhost:3000/api/products");
-            setProducts(response.data);
+            const response = await axios.get(API_URL);
+            const products = response.data;
+
+            const total = products.length;
+            const stock = products.reduce((sum, p) => sum + (p.quantity || 0), 0);
+            const value = products.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 0)), 0);
+
+            setTotalProducts(total);
+            setTotalStock(stock);
+            setTotalValue(value.toFixed(2));
         } catch (error) {
-            console.log("Error fetching products:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleAddProduct = async (e) => {
-        e.preventDefault();
-        if (!newProductName.trim()) return alert("Please enter a product name");
-
-        try {
-            setIsSubmitting(true);
-            const response = await axios.post("http://localhost:3000/api/products", {
-                name: newProductName
-            });
-
-            // Update local state instantly with the new product from the database
-            setProducts((prevProducts) => [...prevProducts, response.data]);
-            setNewProductName(""); // Reset input field
-        } catch (error) {
-            console.log("Error adding product:", error);
-            alert("Failed to add product.");
-        } finally {
-            setIsSubmitting(false);
+            console.error("Error updating stats:", error);
         }
     };
 
     useEffect(() => {
-        getProducts();
+        updateHomeStats();
     }, []);
 
     return (
-        <div className="mt-5" style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-            
-            {/* --- PRODUCT CREATION TABLE --- */}
-            <h3 style={{ marginBottom: "15px" }}>Create New Product</h3>
-            <form onSubmit={handleAddProduct}>
-                <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px", border: "1px solid #ddd" }}>
-                    <thead>
-                        <tr style={{ backgroundColor: "#f4f4f4", textAlign: "left" }}>
-                            <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>Field</th>
-                            <th style={{ padding: "12px", borderBottom: "2px solid #ddd" }}>User Input</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style={{ padding: "12px", fontWeight: "bold", width: "30%", borderBottom: "1px solid #ddd" }}>
-                                Product Name:
-                            </td>
-                            <td style={{ padding: "12px", borderBottom: "1px solid #ddd" }}>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Wireless Mouse"
-                                    value={newProductName}
-                                    onChange={(e) => setNewProductName(e.target.value)}
-                                    style={{ width: "95%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
-                                    disabled={isSubmitting}
-                                />
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan="2" style={{ padding: "12px", textAlign: "right", backgroundColor: "#fafafa" }}>
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting}
-                                    style={{ 
-                                        padding: "8px 20px", 
-                                        backgroundColor: "#28a745", 
-                                        color: "white", 
-                                        border: "none", 
-                                        borderRadius: "4px", 
-                                        cursor: "pointer",
-                                        fontWeight: "bold"
-                                    }}
-                                >
-                                    {isSubmitting ? "Saving..." : "Create Product"}
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </form>
+        <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+                <h1 style={{ fontSize: "48px", color: "#111827", marginBottom: "20px" }}>
+                    Welcome to Product Management
+                </h1>
+                <p style={{ fontSize: "18px", color: "#6b7280", marginBottom: "40px" }}>
+                    Manage your product inventory efficiently. Create, update, and delete products with ease.
+                </p>
 
-            <hr style={{ margin: "30px 0", border: "0", borderTop: "1px solid #eee" }} />
-
-            {/* --- PRODUCT LIST DISPLAY --- */}
-            <h3 style={{ marginBottom: "15px" }}>Available Products</h3>
-            {isLoading ? (
-                <div>Loading products...</div>
-            ) : (
-                <>
-                    {products.length > 0 ? (
-                        <div>
-                            {products.map((product) => (
-                                <Product
-                                    key={product._id}
-                                    product={product}
-                                />
-                            ))}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", margin: "40px auto", maxWidth: "1000px" }}>
+                    <div style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}>
+                        <div style={{ fontSize: "36px", fontWeight: "bold", color: "#2563eb", marginBottom: "10px" }}>
+                            {totalProducts}
                         </div>
-                    ) : (
-                        <div>There are no products available.</div>
-                    )}
-                </>
-            )}
+                        <div style={{ color: "#6b7280", fontSize: "16px" }}>
+                            Total Products
+                        </div>
+                    </div>
+
+                    <div style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}>
+                        <div style={{ fontSize: "36px", fontWeight: "bold", color: "#2563eb", marginBottom: "10px" }}>
+                            ${totalValue}
+                        </div>
+                        <div style={{ color: "#6b7280", fontSize: "16px" }}>
+                            Inventory Value
+                        </div>
+                    </div>
+
+                    <div style={{ background: "white", padding: "30px", borderRadius: "12px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}>
+                        <div style={{ fontSize: "36px", fontWeight: "bold", color: "#2563eb", marginBottom: "10px" }}>
+                            {totalStock}
+                        </div>
+                        <div style={{ color: "#6b7280", fontSize: "16px" }}>
+                            Total Stock
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => navigate("/create")}
+                    style={{
+                        display: "inline-block",
+                        backgroundColor: "#2563eb",
+                        color: "white",
+                        padding: "14px 32px",
+                        borderRadius: "6px",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                        fontSize: "16px",
+                        cursor: "pointer",
+                        border: "none",
+                        marginTop: "20px",
+                        transition: "background-color 0.3s"
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = "#1d4ed8"}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "#2563eb"}
+                >
+                    + Create New Product
+                </button>
+            </div>
         </div>
     );
 };
